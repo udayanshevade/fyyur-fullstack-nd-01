@@ -57,8 +57,9 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+    seeking_description = db.Column(db.String, nullable=True)
+    seeking_venue = db.Column(db.Boolean, default=False)
+    website = db.Column(db.String(500), nullable=True)
 
 #----------------------------------------------------------------------------#
 # Filters.
