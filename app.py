@@ -66,6 +66,9 @@ class Venue(db.Model):
     genres = db.relationship(
         'Genre', secondary=venue_genres, backref=db.backref('venue'))
 
+    def __repr__(self) -> str:
+        return f'<Venue id: {self.id}, name: {self.name}>'
+
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -88,6 +91,9 @@ class Artist(db.Model):
     genres = db.relationship(
         'Genre', secondary=artist_genres, backref=db.backref('artist'))
 
+    def __repr__(self) -> str:
+        return f'<Artist id: {self.id}, name: {self.name}>'
+
 
 class Show(db.Model):
     __tablename__ = 'Show'
@@ -100,12 +106,18 @@ class Show(db.Model):
     end_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     start_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
+    def __repr__(self) -> str:
+        return f'<Show id: {self.id}>'
+
 
 class Genre(db.Model):
     __tablename__ = 'Genre'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
+
+    def __repr__(self) -> str:
+        return f'<Genre id: {self.id}, name: {self.name}>'
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -277,15 +289,36 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
+    try:
+        venue_data = request.form
+        venue = Venue(
+            name=venue_data.get('name'),
+            city=venue_data.get('city'),
+            state=venue_data.get('state'),
+            address=venue_data.get('address'),
+            phone=venue_data.get('phone'),
+            facebook_link=venue_data.get('facebook_link', None),
+            image_link=venue_data.get('image_link', None),
+            seeking_talent=venue_data.get('seeking_talent', False),
+            seeking_description=venue_data.get(
+                'seeking_description', None),
+            website=venue_data.get('website', None),
+        )
 
-    # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+        venue_genre_data = venue_data.getlist('genres')
+        genres = [Genre.query.get(id) for id in venue_genre_data]
+        venue.genres = genres
+
+        db.session.add(venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+        return render_template('pages/home.html')
+    except Exception as e:
+        print('Error creating venue: {}'.format(e))
+        flash('Venue ' + request.form['name'] + ' could not be created.')
+        db.session.rollback()
+    finally:
+        db.session.close()
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
