@@ -208,7 +208,7 @@ def search_venues():
         return view
 
 
-def select_show_details(show):
+def select_venue_show_details(show):
     '''Helper to select pertinent fields from Show object'''
     artist = show.artist
     return {
@@ -226,9 +226,9 @@ def show_venue(venue_id):
         venue = Venue.query.get(venue_id)
         shows = venue.shows
         now = datetime.now(pytz.utc)
-        past_shows = [select_show_details(show)
+        past_shows = [select_venue_show_details(show)
                       for show in shows if show.end_time <= now]
-        upcoming_shows = [select_show_details(
+        upcoming_shows = [select_venue_show_details(
             show) for show in shows if show.start_time >= now]
         data = {
             'id': venue.id,
@@ -328,18 +328,17 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
-    # TODO: replace with real data returned from querying the database
-    data = [{
-        "id": 4,
-        "name": "Guns N Petals",
-    }, {
-        "id": 5,
-        "name": "Matt Quevedo",
-    }, {
-        "id": 6,
-        "name": "The Wild Sax Band",
-    }]
-    return render_template('pages/artists.html', artists=data)
+    view = ''
+    try:
+        data = Artist.query.all()
+        view = render_template('pages/artists.html', artists=data)
+    except Exception as e:
+        print(f'Error fetching artists: {e}')
+        flash('Artists could not be fetched right now. Refresh or try again later.')
+        view = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/artists/search', methods=['POST'])
