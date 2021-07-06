@@ -3,6 +3,7 @@ from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL
 
+
 class ShowForm(Form):
     artist_id = StringField(
         'artist_id'
@@ -13,8 +14,9 @@ class ShowForm(Form):
     start_time = DateTimeField(
         'start_time',
         validators=[DataRequired()],
-        default= datetime.today()
+        default=datetime.today()
     )
+
 
 class VenueForm(Form):
     name = StringField(
@@ -92,25 +94,26 @@ class VenueForm(Form):
         # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=[
-            ('Alternative', 'Alternative'),
-            ('Blues', 'Blues'),
-            ('Classical', 'Classical'),
-            ('Country', 'Country'),
-            ('Electronic', 'Electronic'),
-            ('Folk', 'Folk'),
-            ('Funk', 'Funk'),
-            ('Hip-Hop', 'Hip-Hop'),
-            ('Heavy Metal', 'Heavy Metal'),
-            ('Instrumental', 'Instrumental'),
-            ('Jazz', 'Jazz'),
-            ('Musical Theatre', 'Musical Theatre'),
-            ('Pop', 'Pop'),
-            ('Punk', 'Punk'),
-            ('R&B', 'R&B'),
-            ('Reggae', 'Reggae'),
-            ('Rock n Roll', 'Rock n Roll'),
-            ('Soul', 'Soul'),
-            ('Other', 'Other'),
+            (1, 'Alternative'),
+            (2, 'Blues'),
+            (3, 'Classical'),
+            (4, 'Country'),
+            (5, 'Electronic'),
+            (6, 'Folk'),
+            (7, 'Funk'),
+            (8, 'Hip-Hop'),
+            (9, 'Heavy Metal'),
+            (10, 'Instrumental'),
+            (11, 'Jazz'),
+            (12, 'Musical Theatre'),
+            (13, 'Pop'),
+            (14, 'Punk'),
+            (15, 'R&B'),
+            (16, 'Reggae'),
+            (17, 'Rock n Roll'),
+            (18, 'Soul'),
+            (19, 'Swing'),
+            (19, 'Other'),
         ]
     )
     facebook_link = StringField(
@@ -120,12 +123,11 @@ class VenueForm(Form):
         'website_link'
     )
 
-    seeking_talent = BooleanField( 'seeking_talent' )
+    seeking_talent = BooleanField('seeking_talent')
 
     seeking_description = StringField(
         'seeking_description'
     )
-
 
 
 class ArtistForm(Form):
@@ -201,39 +203,39 @@ class ArtistForm(Form):
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=[
-            ('Alternative', 'Alternative'),
-            ('Blues', 'Blues'),
-            ('Classical', 'Classical'),
-            ('Country', 'Country'),
-            ('Electronic', 'Electronic'),
-            ('Folk', 'Folk'),
-            ('Funk', 'Funk'),
-            ('Hip-Hop', 'Hip-Hop'),
-            ('Heavy Metal', 'Heavy Metal'),
-            ('Instrumental', 'Instrumental'),
-            ('Jazz', 'Jazz'),
-            ('Musical Theatre', 'Musical Theatre'),
-            ('Pop', 'Pop'),
-            ('Punk', 'Punk'),
-            ('R&B', 'R&B'),
-            ('Reggae', 'Reggae'),
-            ('Rock n Roll', 'Rock n Roll'),
-            ('Soul', 'Soul'),
-            ('Other', 'Other'),
+            (1, 'Alternative'),
+            (2, 'Blues'),
+            (3, 'Classical'),
+            (4, 'Country'),
+            (5, 'Electronic'),
+            (6, 'Folk'),
+            (7, 'Funk'),
+            (8, 'Hip-Hop'),
+            (9, 'Heavy Metal'),
+            (10, 'Instrumental'),
+            (11, 'Jazz'),
+            (12, 'Musical Theatre'),
+            (13, 'Pop'),
+            (14, 'Punk'),
+            (15, 'R&B'),
+            (16, 'Reggae'),
+            (17, 'Rock n Roll'),
+            (18, 'Soul'),
+            (19, 'Swing'),
+            (19, 'Other'),
         ]
-     )
+    )
     facebook_link = StringField(
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]
-     )
+    )
 
     website_link = StringField(
         'website_link'
-     )
+    )
 
-    seeking_venue = BooleanField( 'seeking_venue' )
+    seeking_venue = BooleanField('seeking_venue')
 
     seeking_description = StringField(
-            'seeking_description'
-     )
-
+        'seeking_description'
+    )
