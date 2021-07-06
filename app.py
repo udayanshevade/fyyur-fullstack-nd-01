@@ -4,7 +4,8 @@
 
 import json
 import dateutil.parser
-from datetime import date
+from datetime import date, datetime
+import pytz
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
@@ -126,7 +127,8 @@ class Genre(db.Model):
 
 
 def format_datetime(value, format='medium'):
-    date = dateutil.parser.parse(value)
+    date = value if type(
+        value) is datetime else dateutil.parser.parse(value)
     if format == 'full':
         format = "EEEE MMMM, d, y 'at' h:mma"
     elif format == 'medium':
@@ -151,14 +153,16 @@ def index():
 
 @app.route('/venues')
 def venues():
-    page_to_render = None
+    view = ''
 
     try:
         all_venues = Venue.query.all()
         places = {}
+        now = datetime.now(pytz.utc)
         for venue in all_venues:
-            num_upcoming_shows = Show.query.filter(
-                Venue.id == venue.id, Show.start_time >= date.today()).count()
+            upcoming_shows = [
+                show for show in venue.shows if show.start_time >= now]
+            num_upcoming_shows = len(upcoming_shows)
             new_venue_data = {
                 'id': venue.id,
                 'name': venue.name,
@@ -174,20 +178,19 @@ def venues():
                     'venues': [new_venue_data]
                 }
         data = places.values()
-        print(data)
-        page_to_render = render_template('pages/venues.html', areas=data)
+        view = render_template('pages/venues.html', areas=data)
     except Exception as e:
         print(f'Error fetching venues: {e}')
         flash('Venues could not be listed at this time. Refresh or try again later.')
-        page_to_render = render_template('errors/500.html')
+        view = render_template('errors/500.html')
     finally:
         db.session.close()
-        return page_to_render
+        return view
 
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    page_to_render = None
+    view = ''
     try:
         search_term = request.form.get('search_term', '')
         data = Venue.query.filter(Venue.name.contains(search_term))
@@ -197,97 +200,64 @@ def search_venues():
         }
         return render_template('pages/search_venues.html', results=response, search_term=search_term)
     except Exception as e:
+        print(f'Error searching venues for {search_term}: {e}')
         flash('Venues could not be searched at this time. Refresh or try again later.')
-        page_to_render = render_template('errors/500.html')
+        view = render_template('errors/500.html')
     finally:
         db.session.close()
-        return page_to_render
+        return view
+
+
+def select_show_details(show):
+    '''Helper to select pertinent fields from Show object'''
+    artist = show.artist
+    return {
+        'artist_id': artist.id,
+        'artist_name': artist.name,
+        'artist_image_link': artist.image_link,
+        'start_time': show.start_time,
+    }
 
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    # shows the venue page with the given venue_id
-    # TODO: replace with real venue data from the venues table, using venue_id
-    data1 = {
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-        "past_shows": [{
-            "artist_id": 4,
-            "artist_name": "Guns N Petals",
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": "2019-05-21T21:30:00.000Z"
-        }],
-        "upcoming_shows": [],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 0,
-    }
-    data2 = {
-        "id": 2,
-        "name": "The Dueling Pianos Bar",
-        "genres": ["Classical", "R&B", "Hip-Hop"],
-        "address": "335 Delancey Street",
-        "city": "New York",
-        "state": "NY",
-        "phone": "914-003-1132",
-        "website": "https://www.theduelingpianos.com",
-        "facebook_link": "https://www.facebook.com/theduelingpianos",
-        "seeking_talent": False,
-        "image_link": "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80",
-        "past_shows": [],
-        "upcoming_shows": [],
-        "past_shows_count": 0,
-        "upcoming_shows_count": 0,
-    }
-    data3 = {
-        "id": 3,
-        "name": "Park Square Live Music & Coffee",
-        "genres": ["Rock n Roll", "Jazz", "Classical", "Folk"],
-        "address": "34 Whiskey Moore Ave",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "415-000-1234",
-        "website": "https://www.parksquarelivemusicandcoffee.com",
-        "facebook_link": "https://www.facebook.com/ParkSquareLiveMusicAndCoffee",
-        "seeking_talent": False,
-        "image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-        "past_shows": [{
-            "artist_id": 5,
-            "artist_name": "Matt Quevedo",
-            "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-            "start_time": "2019-06-15T23:00:00.000Z"
-        }],
-        "upcoming_shows": [{
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-01T20:00:00.000Z"
-        }, {
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-08T20:00:00.000Z"
-        }, {
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-15T20:00:00.000Z"
-        }],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 1,
-    }
-    data = list(filter(lambda d: d['id'] ==
-                venue_id, [data1, data2, data3]))[0]
-    return render_template('pages/show_venue.html', venue=data)
+    view = ''
+    try:
+        venue = Venue.query.get(venue_id)
+        shows = venue.shows
+        now = datetime.now(pytz.utc)
+        past_shows = [select_show_details(show)
+                      for show in shows if show.end_time <= now]
+        upcoming_shows = [select_show_details(
+            show) for show in shows if show.start_time >= now]
+        data = {
+            'id': venue.id,
+            'name': venue.name,
+            'genres': [x.name for x in venue.genres],
+            'address': venue.address,
+            'city': venue.city,
+            'state': venue.state,
+            'phone': venue.phone,
+            'website': venue.website,
+            'facebook_link': venue.facebook_link,
+            'seeking_talent': venue.seeking_talent,
+            'seeking_description': venue.seeking_description,
+            'image_link': venue.image_link,
+            'past_shows': past_shows,
+            'upcoming_shows': upcoming_shows,
+            'past_shows_count': len(past_shows),
+            'upcoming_shows_count': len(upcoming_shows),
+        }
+
+        view = render_template('pages/show_venue.html', venue=data)
+    except Exception as e:
+        print(f'Error fetching venue {venue_id}: {e}')
+        flash('Venue could not be fetched at this time. Refresh or try again later.')
+        view = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return view
+
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -301,6 +271,7 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+    page = None
     try:
         venue_data = request.form
         venue = Venue(
@@ -324,29 +295,32 @@ def create_venue_submission():
         db.session.add(venue)
         db.session.commit()
         flash('Venue ' + request.form['name'] + ' was successfully listed!')
-        return render_template('pages/home.html')
+        page = render_template('pages/home.html')
     except Exception as e:
         print(f'Error creating venue: {e}')
         flash('Venue ' + request.form['name'] + ' could not be created.')
         db.session.rollback()
     finally:
         db.session.close()
+        return page
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
+    page = ''
     try:
-        print('trying')
         Venue.query.get(venue_id).delete()
         db.session.commit()
         flash('Venue ' + request.form['name'] + ' was successfully deleted!')
-        return render_template('pages/home.html')
+        page = redirect(url_for('index'))
     except Exception as e:
         print(f'Error deleting venue: {e}')
-        flash('Venue ' + request.form['name'] + ' could not be created.')
         db.session.rollback()
+        flash('Venue ' + request.form['name'] + ' could not be deleted.')
+        page = redirect(url_for('show_venue', venue_id=venue_id))
     finally:
         db.session.close()
+        return page
 
 #  Artists
 #  ----------------------------------------------------------------
