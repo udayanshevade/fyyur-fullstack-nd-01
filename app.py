@@ -193,12 +193,13 @@ def search_venues():
     view = ''
     try:
         search_term = request.form.get('search_term', '')
-        data = Venue.query.filter(Venue.name.contains(search_term))
+        data = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
         response = {
             "count": data.count(),
             "data": data.all()
         }
-        return render_template('pages/search_venues.html', results=response, search_term=search_term)
+        view = render_template('pages/search_venues.html',
+                               results=response, search_term=search_term)
     except Exception as e:
         print(f'Error searching venues for {search_term}: {e}')
         flash('Venues could not be searched at this time. Refresh or try again later.')
@@ -343,18 +344,23 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-    # search for "band" should return "The Wild Sax Band".
-    response = {
-        "count": 1,
-        "data": [{
-            "id": 4,
-            "name": "Guns N Petals",
-            "num_upcoming_shows": 0,
-        }]
-    }
-    return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+    view = ''
+    try:
+        search_term = request.form.get('search_term', '')
+        data = Artist.query.filter(Artist.name.ilike(f'%{search_term}%'))
+        response = {
+            "count": data.count(),
+            "data": data.all()
+        }
+        view = render_template('pages/search_artists.html',
+                               results=response, search_term=search_term)
+    except Exception as e:
+        print(f'Error fetching artists: {e}')
+        flash('Artists could not be searched right now. Try again later.')
+        view = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/artists/<int:artist_id>')
@@ -433,7 +439,7 @@ def show_artist(artist_id):
         "upcoming_shows_count": 3,
     }
     data = list(filter(lambda d: d['id'] ==
-                artist_id, [data1, data2, data3]))[0]
+                       artist_id, [data1, data2, data3]))[0]
     return render_template('pages/show_artist.html', artist=data)
 
 #  Update
