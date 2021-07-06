@@ -178,7 +178,7 @@ def venues():
         page_to_render = render_template('pages/venues.html', areas=data)
     except Exception as e:
         print(f'Error fetching venues: {e}')
-        flash('Venues could not be listed at this time. Refresh or try again.')
+        flash('Venues could not be listed at this time. Refresh or try again later.')
         page_to_render = render_template('errors/500.html')
     finally:
         db.session.close()
@@ -187,18 +187,21 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-    response = {
-        "count": 1,
-        "data": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }
-    return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    page_to_render = None
+    try:
+        search_term = request.form.get('search_term', '')
+        data = Venue.query.filter(Venue.name.contains(search_term))
+        response = {
+            "count": data.count(),
+            "data": data.all()
+        }
+        return render_template('pages/search_venues.html', results=response, search_term=search_term)
+    except Exception as e:
+        flash('Venues could not be searched at this time. Refresh or try again later.')
+        page_to_render = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return page_to_render
 
 
 @app.route('/venues/<int:venue_id>')
