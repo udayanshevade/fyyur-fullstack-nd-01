@@ -13,7 +13,9 @@
 				<i class="fas fa-music"></i>
 				<div class="item">
 					<h5>{{ venue.name }}</h5>
-					Upcoming shows: <span class="badge">{{ venue.num_upcoming_shows }}</span>
+					{% if venue.num_upcoming_shows %}
+						Upcoming shows: <span class="badge">{{ venue.num_upcoming_shows }}</span>
+					{% endif %}
 				</div>
 			</a>
 		</li>
