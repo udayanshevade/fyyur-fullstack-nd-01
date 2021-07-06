@@ -4,6 +4,7 @@
 
 import json
 import dateutil.parser
+from datetime import date
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
@@ -150,30 +151,38 @@ def index():
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
-    return render_template('pages/venues.html', areas=data)
+    page_to_render = None
+
+    try:
+        all_venues = Venue.query.all()
+        places = {}
+        for venue in all_venues:
+            num_upcoming_shows = Show.query.filter(
+                Venue.id == venue.id, Show.start_time >= date.today()).count()
+            new_venue_data = {
+                'id': venue.id,
+                'name': venue.name,
+                'num_upcoming_shows': num_upcoming_shows
+            }
+            if places.get(f'{venue.state}{venue.city}', None):
+                places[f'{venue.state}{venue.city}']['venues'].append(
+                    new_venue_data)
+            else:
+                places[f'{venue.state}{venue.city}'] = {
+                    'city': venue.city,
+                    'state': venue.state,
+                    'venues': [new_venue_data]
+                }
+        data = places.values()
+        print(data)
+        page_to_render = render_template('pages/venues.html', areas=data)
+    except Exception as e:
+        print(f'Error fetching venues: {e}')
+        flash('Venues could not be listed at this time. Refresh or try again.')
+        page_to_render = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return page_to_render
 
 
 @app.route('/venues/search', methods=['POST'])

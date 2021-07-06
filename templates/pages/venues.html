@@ -1,5 +1,8 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur | Venues{% endblock %}
+{% block head %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/venues.css') }}">
+{% endblock %}
 {% block content %}
 {% for area in areas %}
 <h3>{{ area.city }}, {{ area.state }}</h3>
@@ -10,6 +13,7 @@
 				<i class="fas fa-music"></i>
 				<div class="item">
 					<h5>{{ venue.name }}</h5>
+					Upcoming shows: <span class="badge">{{ venue.num_upcoming_shows }}</span>
 				</div>
 			</a>
 		</li>
