@@ -77,7 +77,7 @@ npm install bootstrap@3
 │   ├── models.py *** Defines the SqlAlchemy Models
 ├── error.log
 ├── requirements.txt *** The dependencies we need to install with "pip3 install -r requirements.txt"
-└──
+└── setup.py *** Optionally seeds the database
 ```
 
 Overview:
@@ -129,7 +129,7 @@ pip install -r requirements.txt
 flask db migrate
 ```
 
-5. **Populate the DB with seed data:**
+5. **Populate the DB with seed data (optional):**
 
 ```
 python setup.py
