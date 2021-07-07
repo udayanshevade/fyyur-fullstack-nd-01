@@ -11,7 +11,7 @@
       if (val) {
         window.location.replace('/venues');
       } else {
-        // TODO: replace with better error handling
+        // replace with better error handling
         alert('Failed to delete the venue. Try again later.');
       }
     } catch (err) {
