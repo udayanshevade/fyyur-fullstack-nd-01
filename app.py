@@ -4,7 +4,7 @@
 
 import json
 import dateutil.parser
-from datetime import date, datetime
+from datetime import datetime
 import pytz
 import babel
 from flask import Flask, render_template, request, json, flash, redirect, url_for
@@ -12,7 +12,6 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
@@ -262,8 +261,18 @@ def show_venue(venue_id):
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-    form = VenueForm()
-    return render_template('forms/new_venue.html', form=form)
+    view = ''
+    try:
+        all_genres = Genre.query.all()
+        form = VenueForm()
+        form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
+        view = render_template('forms/new_venue.html', form=form)
+    except Exception as e:
+        print(f'Error creating venue form: {e}')
+        view = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/venues/create', methods=['POST'])
@@ -434,6 +443,7 @@ def delete_artist(artist_id):
 def edit_artist(artist_id):
     view = ''
     try:
+        all_genres = Genre.query.all()
         data = Artist.query.get(artist_id)
         artist = {
             'id': data.id,
@@ -451,6 +461,7 @@ def edit_artist(artist_id):
 
         # prepopulate form with existing values from artist data
         form = ArtistForm(data=artist)
+        form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         view = render_template('forms/edit_artist.html',
                                form=form, artist=artist)
     except Exception as e:
@@ -490,6 +501,7 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     try:
+        all_genres = Genre.query.all()
         data = Venue.query.get(venue_id)
         venue = {
             'id': data.id,
@@ -508,6 +520,7 @@ def edit_venue(venue_id):
 
         # prepopulate form with existing values from artist data
         form = VenueForm(data=venue)
+        form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         view = render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
         print(f'Error editing venue: {e}')
@@ -548,8 +561,18 @@ def edit_venue_submission(venue_id):
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-    form = ArtistForm()
-    return render_template('forms/new_artist.html', form=form)
+    view = ''
+    try:
+        genres = [(genre.id, genre.name) for genre in Genre.query.all()]
+        form = ArtistForm()
+        form.genres.choices = genres
+        view = render_template('forms/new_artist.html', form=form)
+    except Exception as e:
+        print(f'Error setting form for creating an artist: {e}')
+        view = render_template('errors/500.html')
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/artists/create', methods=['POST'])
