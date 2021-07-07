@@ -6,6 +6,7 @@ import json
 import dateutil.parser
 from datetime import date, datetime
 import pytz
+import copy
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
@@ -419,28 +420,30 @@ def show_artist(artist_id):
 def edit_artist(artist_id):
     view = ''
     try:
-        form = ArtistForm()
         data = Artist.query.get(artist_id)
         artist = {
             'id': data.id,
             'name': data.name,
+            'facebook_link': data.facebook_link,
+            'image_link': data.image_link,
             'genres': [genre.name for genre in data.genres],
             'city': data.city,
             'state': data.state,
             'phone': data.phone,
-            'website': data.website,
-            'facebook_link': data.facebook_link,
             'seeking_venue': data.seeking_venue,
             'seeking_description': data.seeking_description,
-            'image_link': data.image_link,
+            'website': data.website,
         }
+        form_data = copy.copy(artist)
+        form_data['genres'] = [genre.id for genre in data.genres]
+        form = ArtistForm(data=form_data)
         # TODO: populate form with fields from artist with ID <artist_id>
         view = render_template('forms/edit_artist.html',
                                form=form, artist=artist)
     except Exception as e:
         print(f'Error getting artist {artist_id}: {e}')
         flash('Error getting artist to edit. Refresh or try again later.')
-        view = render_template('forms/500.html')
+        view = render_template('errors/500.html')
     finally:
         db.session.close()
         return view
@@ -448,10 +451,29 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
-
-    return redirect(url_for('show_artist', artist_id=artist_id))
+    view = ''
+    try:
+        artist = Artist.query.get(artist_id)
+        artist.name = request.form.get('name')
+        artist.facebook_link = request.form.get('facebook_link')
+        artist.image_link = request.form.get('image_link')
+        artist.genres = [Genre.query.get(id)
+                         for id in request.form.getlist('genres')]
+        artist.city = request.form.get('city')
+        artist.state = request.form.get('state')
+        artist.phone = request.form.get('phone')
+        artist.seeking_venue = request.form.get('seeking_venue') == 'y'
+        artist.seeking_description = request.form.get('seeking_description')
+        artist.website = request.form.get('website')
+        db.session.commit()
+        view = redirect(url_for('show_artist', artist_id=artist_id))
+    except Exception as e:
+        print(f'Error editing artist: {e}')
+        flash('Could not edit artist. Please try again later.')
+        db.session.rollback()
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
