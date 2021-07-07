@@ -4,9 +4,9 @@ from logging import Formatter, FileHandler
 from flaskr.forms import *
 from flaskr.app import app
 import flaskr.filters
-import flaskr.venues
-import flaskr.artists
-import flaskr.shows
+import flaskr.controllers.venues
+import flaskr.controllers.artists
+import flaskr.controllers.shows
 
 
 @app.route('/')
