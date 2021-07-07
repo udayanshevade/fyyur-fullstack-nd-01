@@ -7,7 +7,7 @@ import dateutil.parser
 from datetime import date, datetime
 import pytz
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, json, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -149,7 +149,7 @@ def index():
 #  Venues
 #  ----------------------------------------------------------------
 
-@app.route('/venues')
+@app.route('/venues', methods=['GET'])
 def venues():
     view = ''
 
@@ -218,7 +218,7 @@ def select_venue_show_details(show):
     }
 
 
-@app.route('/venues/<int:venue_id>')
+@app.route('/venues/<int:venue_id>', methods=['GET'])
 def show_venue(venue_id):
     view = ''
     try:
@@ -281,7 +281,7 @@ def create_venue_submission():
             phone=venue_data.get('phone'),
             facebook_link=venue_data.get('facebook_link', None),
             image_link=venue_data.get('image_link', None),
-            seeking_talent=venue_data.get('seeking_talent', False),
+            seeking_talent=venue_data.get('seeking_talent', False) == 'y',
             seeking_description=venue_data.get(
                 'seeking_description', None),
             website=venue_data.get('website', None),
@@ -307,27 +307,26 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-    page = ''
+    success = False
+    status = 500
     try:
         venue = Venue.query.get(venue_id)
-        venue.delete()
+        db.session.delete(venue)
         db.session.commit()
-        flash(f'Venue {venue.name} was successfully deleted!')
-        page = redirect(url_for('index'))
+        success = True
+        status = 200
     except Exception as e:
-        print(f'Error deleting venue: {e}')
         db.session.rollback()
-        flash(f'Venue {venue.name} could not be deleted.')
-        page = redirect(url_for('show_venue', venue_id=venue_id))
+        print(f'Error deleting venue: {e}')
     finally:
         db.session.close()
-        return page
+        return json.dumps(success), status
 
 #  Artists
 #  ----------------------------------------------------------------
 
 
-@app.route('/artists')
+@app.route('/artists', methods={'GET'})
 def artists():
     view = ''
     try:
@@ -374,7 +373,7 @@ def select_artist_show_details(show):
     }
 
 
-@app.route('/artists/<int:artist_id>')
+@app.route('/artists/<int:artist_id>', methods=['GET'])
 def show_artist(artist_id):
     view = ''
     try:
@@ -588,7 +587,7 @@ def select_show_details(show):
     }
 
 
-@app.route('/shows')
+@app.route('/shows', methods=['GET'])
 def shows():
     view = ''
     try:
@@ -604,7 +603,7 @@ def shows():
         return view
 
 
-@app.route('/shows/create')
+@app.route('/shows/create', methods=['GET'])
 def create_shows():
     # renders form. do not touch.
     form = ShowForm()
