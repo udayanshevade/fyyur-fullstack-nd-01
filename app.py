@@ -25,8 +25,6 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# TODO: connect to a local postgresql database
-
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
@@ -542,14 +540,34 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
     # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
-
-    # on successful db insert, flash success
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template('pages/home.html')
+    try:
+        artist_data = request.form
+        artist = Artist(
+            name=artist_data.get('name'),
+            facebook_link=artist_data.get('facebook_link'),
+            image_link=artist_data.get('image_link'),
+            city=artist_data.get('city'),
+            state=artist_data.get('state'),
+            phone=artist_data.get('phone'),
+            seeking_venue=artist_data.get('seeking_venue') == 'y',
+            seeking_description=artist_data.get('seeking_description'),
+            website=artist_data.get('website'),
+        )
+        artist.genres = [Genre.query.get(id)
+                         for id in request.form.getlist('genres')]
+        db.session.add(artist)
+        db.session.commit()
+        # on successful db insert, flash success
+        flash(f'Artist {artist.name} was successfully listed!')
+        view = render_template('pages/home.html')
+    except Exception as e:
+        print(f'Error creating an artist: {e}')
+        flash('An error occurred. Artist could not be listed.')
+        view = redirect(url_for('create_artist_form'))
+        db.session.rollback()
+    finally:
+        db.session.close()
+        return view
 
 
 #  Shows
