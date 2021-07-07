@@ -1,6 +1,6 @@
 import pytz
 from datetime import datetime
-from flask import flash, json, redirect, render_template, request, url_for
+from flask import abort, flash, json, redirect, render_template, request, url_for
 from flaskr.db import db
 from flaskr.app import app
 from flaskr.models import Venue, Genre
@@ -40,6 +40,7 @@ def venues():
         view = render_template('pages/venues.html', areas=data)
     except Exception as e:
         print(f'Error fetching venues: {e}')
+        flash('Venues could not be fetched at this time.')
         view = render_template('errors/500.html')
     finally:
         db.session.close()
@@ -86,9 +87,11 @@ def select_venue_show_details(show):
 
 @app.route('/venues/<int:venue_id>', methods=['GET'])
 def show_venue(venue_id):
-    view = ''
     try:
         venue = Venue.query.get(venue_id)
+        if not venue:
+            abort(404, 'Venue does not exist')
+
         shows = venue.shows
         now = datetime.now(pytz.utc)
         past_shows = [select_venue_show_details(show)
@@ -114,13 +117,17 @@ def show_venue(venue_id):
             'upcoming_shows_count': len(upcoming_shows),
         }
 
-        view = render_template('pages/show_venue.html', venue=data)
-    except Exception as e:
-        print(f'Error fetching venue {venue_id}: {e}')
-        view = render_template('errors/500.html')
-    finally:
         db.session.close()
-        return view
+
+        return render_template('pages/show_venue.html', venue=data)
+    except Exception as e:
+        db.session.close()
+        print(f'Error fetching venue {venue_id}: {e}')
+        err_message = getattr(
+            e, 'message', 'Venue could not be fetched at this time')
+        err_status = getattr(e, 'code', 500)
+        flash(err_message)
+        abort(err_status)
 
 
 #  Create Venue
