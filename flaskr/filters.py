@@ -1,7 +1,7 @@
 import dateutil.parser
 import babel
 from datetime import datetime
-from db import app
+from flaskr.app import app
 
 #----------------------------------------------------------------------------#
 # Filters.

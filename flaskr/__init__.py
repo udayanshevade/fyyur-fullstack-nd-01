@@ -1,16 +1,12 @@
-#----------------------------------------------------------------------------#
-# Imports
-#----------------------------------------------------------------------------#
-
-from flask import render_template, request, json, flash, redirect, url_for
+from flask import render_template
 import logging
 from logging import Formatter, FileHandler
-from forms import *
-from db import app, db
-import filters
-import controllers.venues
-import controllers.artists
-import controllers.shows
+from flaskr.forms import *
+from flaskr.app import app
+import flaskr.filters
+import flaskr.venues
+import flaskr.artists
+import flaskr.shows
 
 
 @app.route('/')

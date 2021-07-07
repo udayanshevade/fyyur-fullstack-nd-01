@@ -1,8 +1,9 @@
 
 from flask import flash, redirect, render_template, request, url_for
-from models import Show
-from db import db, app
-from forms import ShowForm
+from flaskr.db import db
+from flaskr.app import app
+from flaskr.models import Show
+from flaskr.forms import ShowForm
 
 #  Shows
 #  ----------------------------------------------------------------

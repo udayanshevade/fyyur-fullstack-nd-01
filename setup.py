@@ -1,4 +1,4 @@
-from app import db, Genre, Venue, Artist, Show
+from flaskr.app import db, Genre, Venue, Artist, Show
 
 genres_data = [
     {'name': 'Alternative'},

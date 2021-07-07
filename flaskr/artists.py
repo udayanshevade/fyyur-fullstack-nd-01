@@ -1,9 +1,10 @@
 import pytz
 from datetime import datetime
 from flask import flash, json, redirect, render_template, request, url_for
-from models import Artist, Genre
-from db import db, app
-from forms import ArtistForm
+from flaskr.app import app
+from flaskr.db import db
+from flaskr.models import Artist, Genre
+from flaskr.forms import ArtistForm
 
 #  Artists
 #  ----------------------------------------------------------------
