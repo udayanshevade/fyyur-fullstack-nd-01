@@ -417,22 +417,33 @@ def show_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-    form = ArtistForm()
-    artist = {
-        "id": 4,
-        "name": "Guns N Petals",
-        "genres": ["Rock n Roll"],
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "326-123-5000",
-        "website": "https://www.gunsnpetalsband.com",
-        "facebook_link": "https://www.facebook.com/GunsNPetals",
-        "seeking_venue": True,
-        "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-        "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-    }
-    # TODO: populate form with fields from artist with ID <artist_id>
-    return render_template('forms/edit_artist.html', form=form, artist=artist)
+    view = ''
+    try:
+        form = ArtistForm()
+        data = Artist.query.get(artist_id)
+        artist = {
+            'id': data.id,
+            'name': data.name,
+            'genres': [genre.name for genre in data.genres],
+            'city': data.city,
+            'state': data.state,
+            'phone': data.phone,
+            'website': data.website,
+            'facebook_link': data.facebook_link,
+            'seeking_venue': data.seeking_venue,
+            'seeking_description': data.seeking_description,
+            'image_link': data.image_link,
+        }
+        # TODO: populate form with fields from artist with ID <artist_id>
+        view = render_template('forms/edit_artist.html',
+                               form=form, artist=artist)
+    except Exception as e:
+        print(f'Error getting artist {artist_id}: {e}')
+        flash('Error getting artist to edit. Refresh or try again later.')
+        view = render_template('forms/500.html')
+    finally:
+        db.session.close()
+        return view
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
