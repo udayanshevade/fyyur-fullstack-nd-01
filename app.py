@@ -6,7 +6,6 @@ import json
 import dateutil.parser
 from datetime import date, datetime
 import pytz
-import copy
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
@@ -596,15 +595,26 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-    # called to create new shows in the db, upon submitting new show listing form
-    # TODO: insert form data as a new Show record in the db, instead
-
-    # on successful db insert, flash success
-    flash('Show was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    try:
+        show = Show(
+            artist_id=request.form.get('artist_id'),
+            venue_id=request.form.get('venue_id'),
+            start_time=request.form.get('start_time'),
+            end_time=request.form.get('end_time'),
+        )
+        db.session.add(show)
+        db.session.commit()
+        # on successful db insert, flash success
+        flash('Show was successfully listed!')
+        view = render_template('pages/home.html')
+    except Exception as e:
+        print(f'Error creating a show: {e}')
+        flash('An error occurred. Show could not be listed.')
+        view = redirect(url_for('create_shows'))
+        db.session.rollback()
+    finally:
+        db.session.close()
+        return view
 
 
 @app.errorhandler(404)

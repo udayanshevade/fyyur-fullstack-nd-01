@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL
@@ -14,7 +15,12 @@ class ShowForm(Form):
     start_time = DateTimeField(
         'start_time',
         validators=[DataRequired()],
-        default=datetime.today()
+        default=datetime.now(pytz.utc)
+    )
+    end_time = DateTimeField(
+        'end_time',
+        validators=[DataRequired()],
+        default=datetime.now(pytz.utc) + timedelta(hours=2)
     )
 
 
