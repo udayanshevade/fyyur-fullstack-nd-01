@@ -4,8 +4,14 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/venues.css') }}">
 {% endblock %}
 {% block content %}
+<header>
+	<a href="/venues/create">
+		<button class="btn btn-default btn-lg">Post a venue</button>
+	</a>
+</header>
 {% for area in areas %}
-<h3>{{ area.city }}, {{ area.state }}</h3>
+<section>
+	<h3>{{ area.city }}, {{ area.state }}</h3>
 	<ul class="items">
 		{% for venue in area.venues %}
 		<li>
@@ -21,5 +27,6 @@
 		</li>
 		{% endfor %}
 	</ul>
+</section>
 {% endfor %}
 {% endblock %}
