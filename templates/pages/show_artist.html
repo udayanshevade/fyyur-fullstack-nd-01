@@ -73,6 +73,9 @@
 </section>
 
 <a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
-
+<button id="btnDeleteArtist" data-artist-id={{ artist.id }} class="btn btn-secondary btn-lg">
+	Delete
+</button>
+<script src="{{ url_for('static', filename='js/show_artist.js') }}"></script>
 {% endblock %}
 

@@ -179,7 +179,6 @@ def venues():
         view = render_template('pages/venues.html', areas=data)
     except Exception as e:
         print(f'Error fetching venues: {e}')
-        flash('Venues could not be listed at this time. Refresh or try again later.')
         view = render_template('errors/500.html')
     finally:
         db.session.close()
@@ -251,7 +250,6 @@ def show_venue(venue_id):
         view = render_template('pages/show_venue.html', venue=data)
     except Exception as e:
         print(f'Error fetching venue {venue_id}: {e}')
-        flash('Venue could not be fetched at this time. Refresh or try again later.')
         view = render_template('errors/500.html')
     finally:
         db.session.close()
@@ -409,6 +407,24 @@ def show_artist(artist_id):
     finally:
         db.session.close()
         return view
+
+
+@app.route('/artists/<artist_id>', methods=['DELETE'])
+def delete_artist(artist_id):
+    success = False
+    status = 500
+    try:
+        artist = Artist.query.get(artist_id)
+        db.session.delete(artist)
+        db.session.commit()
+        success = True
+        status = 200
+    except Exception as e:
+        db.session.rollback()
+        print(f'Error deleting artist: {e}')
+    finally:
+        db.session.close()
+        return json.dumps(success), status
 
 #  Update
 #  ----------------------------------------------------------------

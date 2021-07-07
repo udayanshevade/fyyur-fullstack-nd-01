@@ -1,4 +1,8 @@
 (() => {
+  /**
+   * Handles delete button click for a venue
+   * @param {Event} e
+   */
   const handleDeleteVenue = async (e) => {
     const id = e.target.dataset.venueId;
     try {
