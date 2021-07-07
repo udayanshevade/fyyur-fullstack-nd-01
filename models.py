@@ -37,7 +37,7 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean, default=False)
     website = db.Column(db.String(500), nullable=True)
 
-    shows = db.relationship('Show', backref='venue')
+    shows = db.relationship('Show', backref='venue', passive_deletes=True)
     genres = db.relationship(
         'Genre', secondary=venue_genres, backref=db.backref('venue'))
 
@@ -62,7 +62,7 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean, default=False)
     website = db.Column(db.String(500), nullable=True)
 
-    shows = db.relationship('Show', backref='artist')
+    shows = db.relationship('Show', backref='artist', passive_deletes=True)
     genres = db.relationship(
         'Genre', secondary=artist_genres, backref=db.backref('artist'))
 
@@ -75,8 +75,9 @@ class Show(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     artist_id = db.Column(db.Integer, db.ForeignKey(
-        'Artist.id'), nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+        'Artist.id', ondelete='CASCADE'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey(
+        'Venue.id', ondelete='CASCADE'), nullable=False)
 
     end_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     start_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
