@@ -166,11 +166,18 @@ def create_venue_submission():
         genres = [Genre.query.get(id) for id in venue_genre_data]
         venue.genres = genres
 
-        db.session.add(venue)
-        db.session.commit()
-
-        flash(f'Venue {venue.name} was successfully listed!')
-        return render_template('pages/home.html')
+        form = VenueForm(data=venue_data)
+        form.genres.choices = [(genre.id, genre.name)
+                               for genre in Genre.query.all()]
+        if form.validate_on_submit():
+            db.session.add(venue)
+            db.session.commit()
+            flash(f'Venue {venue.name} was successfully listed!')
+            return render_template('pages/home.html')
+        else:
+            db.session.rollback()
+            flash(f'Invalid venue details. Address errors before resubmitting.')
+            return render_template('forms/new_venue.html', form=form)
     except Exception as e:
         db.session.rollback()
         venue_name = venue_data.get('name')
@@ -188,7 +195,6 @@ def create_venue_submission():
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     try:
-        all_genres = Genre.query.all()
         data = Venue.query.get(venue_id)
         if not data:
             abort(404, 'Venue does not exist')
@@ -210,6 +216,7 @@ def edit_venue(venue_id):
 
         # prepopulate form with existing values from artist data
         form = VenueForm(data=venue)
+        all_genres = Genre.query.all()
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         return render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
@@ -245,8 +252,19 @@ def edit_venue_submission(venue_id):
         venue.seeking_talent = form_data.get('seeking_venue') == 'y'
         venue.seeking_description = form_data.get('seeking_description')
         venue.website = form_data.get('website')
-        db.session.commit()
-        return redirect(url_for('show_venue', venue_id=venue_id))
+
+        form = VenueForm(data=form_data)
+        all_genres = Genre.query.all()
+        form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
+
+        if form.validate_on_submit():
+            db.session.commit()
+            return redirect(url_for('show_venue', venue_id=venue_id))
+        else:
+            print(form.errors)
+            db.session.rollback()
+            flash(f'Invalid venue details. Address errors before resubmitting.')
+            return render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
         db.session.rollback()
         print(f'Error - [POST] venues/{venue_id}/edit - {e}')
