@@ -144,24 +144,40 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     try:
         artist = Artist.query.get(artist_id)
-        artist.name = request.form.get('name')
-        artist.facebook_link = request.form.get('facebook_link')
-        artist.image_link = request.form.get('image_link')
+
+        if not artist:
+            abort(404, 'Artist does not exist')
+
+        form_data = request.form
+        artist.name = form_data.get('name')
+        artist.facebook_link = form_data.get('facebook_link')
+        artist.image_link = form_data.get('image_link')
         artist.genres = [Genre.query.get(id)
-                         for id in request.form.getlist('genres')]
-        artist.city = request.form.get('city')
-        artist.state = request.form.get('state')
-        artist.phone = request.form.get('phone')
-        artist.seeking_venue = request.form.get('seeking_venue') == 'y'
-        artist.seeking_description = request.form.get('seeking_description')
-        artist.website = request.form.get('website')
-        db.session.commit()
-        return redirect(url_for('show_artist', artist_id=artist_id))
+                         for id in form_data.getlist('genres')]
+        artist.city = form_data.get('city')
+        artist.state = form_data.get('state')
+        artist.phone = form_data.get('phone')
+        artist.seeking_venue = form_data.get('seeking_venue') == 'y'
+        artist.seeking_description = form_data.get('seeking_description')
+        artist.website = form_data.get('website')
+
+        form = ArtistForm(data=form_data)
+        all_genres = Genre.query.all()
+        form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
+
+        if form.validate_on_submit():
+            db.session.commit()
+            return redirect(url_for('show_artist', artist_id=artist_id))
+        else:
+            print(form.errors)
+            db.session.rollback()
+            flash(f'Invalid artist details. Fix errors before resubmitting.')
+            return render_template('forms/edit_artist.html', form=form, artist=artist)
     except Exception as e:
         db.session.rollback()
         print(f'Error - [POST] /artists/{artist_id}/edit - {e}')
         err_message = getattr(
-            e, 'message', 'Could not edit venue at this time. Try again later.')
+            e, 'message', 'Could not edit artist at this time. Try again later.')
         err_status = getattr(e, 'code', 500)
         flash(err_message)
         abort(err_status)
@@ -206,11 +222,20 @@ def create_artist_submission():
         )
         artist.genres = [Genre.query.get(id)
                          for id in request.form.getlist('genres')]
-        db.session.add(artist)
-        db.session.commit()
-        # on successful db insert, flash success
-        flash(f'Artist {artist.name} was successfully listed!')
-        return render_template('pages/home.html')
+
+        form = ArtistForm(data=artist_data)
+        form.genres.choices = [(genre.id, genre.name)
+                               for genre in Genre.query.all()]
+        if form.validate_on_submit():
+            db.session.add(artist)
+            db.session.commit()
+            # on successful db insert, flash success
+            flash(f'Artist {artist.name} was successfully listed!')
+            return render_template('pages/home.html')
+        else:
+            db.session.rollback()
+            flash(f'Invalid artist details. Fix errors before resubmitting.')
+            return render_template('forms/new_artist.html', form=form)
     except Exception as e:
         db.session.rollback()
         print(f'Error - [POST] /artists/create - {e}')

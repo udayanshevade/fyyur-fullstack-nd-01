@@ -31,7 +31,6 @@ def phone_validator(field):
     '''
     number = field.data
     regex = re.compile('^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$')
-    print(f'number {number}')
     return regex.match(number)
 
 #  Forms
@@ -95,12 +94,10 @@ class VenueForm(FlaskForm):
     )
 
     def validate_phone(self, field):
-        print('validating phone')
         if not phone_validator(field):
             raise ValidationError('Invalid phone')
 
     def validate_state(self, field):
-        print('validating state')
         if not state_validator(field):
             raise ValidationError('Invalid state')
 
@@ -113,12 +110,11 @@ class ArtistForm(FlaskForm):
         'city', validators=[DataRequired()]
     )
     state = SelectField(
-        'state', validators=[DataRequired(), state_validator],
+        'state', validators=[DataRequired()],
         choices=State.choices()
     )
     phone = StringField(
         'phone',
-        validators=[phone_validator]
     )
     image_link = StringField(
         'image_link'

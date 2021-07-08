@@ -176,7 +176,7 @@ def create_venue_submission():
             return render_template('pages/home.html')
         else:
             db.session.rollback()
-            flash(f'Invalid venue details. Address errors before resubmitting.')
+            flash(f'Invalid venue details. Fix errors before resubmitting.')
             return render_template('forms/new_venue.html', form=form)
     except Exception as e:
         db.session.rollback()
@@ -263,7 +263,7 @@ def edit_venue_submission(venue_id):
         else:
             print(form.errors)
             db.session.rollback()
-            flash(f'Invalid venue details. Address errors before resubmitting.')
+            flash(f'Invalid venue details. Fix errors before resubmitting.')
             return render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
         db.session.rollback()
