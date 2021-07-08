@@ -37,7 +37,7 @@ def venues():
         data = places.values()
         return render_template('pages/venues.html', areas=data)
     except Exception as e:
-        print(f'Error fetching venues: {e}')
+        print(f'Error - [GET] /venues - {e}')
         flash('Venues could not be fetched at this time.')
         abort(500)
     finally:
@@ -59,7 +59,7 @@ def search_venues():
         return render_template('pages/search_venues.html',
                                results=response, search_term=search_term)
     except Exception as e:
-        print(f'Error searching venues for {search_term}: {e}')
+        print(f'Error - [POST] /venues/search - {e}')
         flash('Venues could not be searched at this time. Refresh or try again later.')
         abort(500)
     finally:
@@ -114,7 +114,7 @@ def show_venue(venue_id):
 
         return render_template('pages/show_venue.html', venue=data)
     except Exception as e:
-        print(f'Error fetching venue {venue_id}: {e}')
+        print(f'Error - [GET] venues/{venue_id} - {e}')
         err_message = getattr(
             e, 'message', 'Venue could not be fetched at this time')
         err_status = getattr(e, 'code', 500)
@@ -137,7 +137,7 @@ def create_venue_form():
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         return render_template('forms/new_venue.html', form=form)
     except Exception as e:
-        print(f'Error creating venue form: {e}')
+        print(f'Error - [GET] venues/create - {e}')
         abort(500)
     finally:
         db.session.close()
@@ -174,7 +174,7 @@ def create_venue_submission():
     except Exception as e:
         db.session.rollback()
         venue_name = venue_data.get('name')
-        print(f'Error creating venue {venue_name}: {e}')
+        print(f'Error - [POST] venues/create - {e}')
         flash(f'Venue {venue_name} could not be created.')
         abort(500)
     finally:
@@ -214,7 +214,7 @@ def edit_venue(venue_id):
         return render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
         db.session.rollback()
-        print(f'Error editing venue: {e}')
+        print(f'Error - [GET] venues/{venue_id}/edit - {e}')
         err_message = getattr(
             e, 'message', 'Venue could not be fetched at this time')
         err_status = getattr(e, 'code', 500)
@@ -228,25 +228,28 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
     try:
         venue = Venue.query.get(venue_id)
+
         if not venue:
             abort(404, 'Venue does not exist')
 
-        venue.name = request.form.get('name')
-        venue.facebook_link = request.form.get('facebook_link')
-        venue.image_link = request.form.get('image_link')
+        form_data = request.form
+
+        venue.name = form_data.get('name')
+        venue.facebook_link = form_data.get('facebook_link')
+        venue.image_link = form_data.get('image_link')
         venue.genres = [Genre.query.get(id)
-                        for id in request.form.getlist('genres')]
-        venue.city = request.form.get('city')
-        venue.state = request.form.get('state')
-        venue.phone = request.form.get('phone')
-        venue.seeking_talent = request.form.get('seeking_venue') == 'y'
-        venue.seeking_description = request.form.get('seeking_description')
-        venue.website = request.form.get('website')
+                        for id in form_data.getlist('genres')]
+        venue.city = form_data.get('city')
+        venue.state = form_data.get('state')
+        venue.phone = form_data.get('phone')
+        venue.seeking_talent = form_data.get('seeking_venue') == 'y'
+        venue.seeking_description = form_data.get('seeking_description')
+        venue.website = form_data.get('website')
         db.session.commit()
         return redirect(url_for('show_venue', venue_id=venue_id))
     except Exception as e:
         db.session.rollback()
-        print(f'Error editing venue: {e}')
+        print(f'Error - [POST] venues/{venue_id}/edit - {e}')
         err_message = getattr(
             e, 'message', 'Could not edit venue at this time. Try again later.')
         err_status = getattr(e, 'code', 500)
@@ -274,7 +277,7 @@ def delete_venue(venue_id):
         status = 200
     except Exception as e:
         db.session.rollback()
-        print(f'Error deleting venue: {e}')
+        print(f'Error - [DELETE] venues/{venue_id} - {e}')
     finally:
         db.session.close()
         return json.dumps(success), status

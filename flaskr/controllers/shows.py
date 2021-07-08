@@ -32,7 +32,7 @@ def shows():
         return render_template('pages/shows.html', shows=data)
     except Exception as e:
         db.session.close()
-        print(f'Error fetching shows: {e}')
+        print(f'Error - [GET] /shows - {e}')
         flash('Shows could not be fetched at this time. Refresh or try again later.')
         abort(500)
     finally:
@@ -66,7 +66,7 @@ def create_show_submission():
         return render_template('pages/home.html')
     except Exception as e:
         db.session.rollback()
-        print(f'Error creating a show: {e}')
+        print(f'Error - GET /shows/create - {e}')
         flash('An error occurred. Show could not be listed.')
         return redirect(url_for('create_shows'))
     finally:

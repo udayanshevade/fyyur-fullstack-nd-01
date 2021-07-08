@@ -16,7 +16,7 @@ def artists():
         artists = Artist.query.all()
         return render_template('pages/artists.html', artists=artists)
     except Exception as e:
-        print(f'Error fetching artists: {e}')
+        print(f'Error - [GET] /artists - {e}')
         flash('Artists could not be fetched right now. Refresh or try again later.')
         abort(500)
     finally:
@@ -39,7 +39,7 @@ def search_artists():
         return render_template('pages/search_artists.html',
                                results=response, search_term=search_term)
     except Exception as e:
-        print(f'Error fetching artists: {e}')
+        print(f'Error - [POST] /artists/search - {e}')
         flash('Artists could not be searched at this time. Refresh or try again later.')
         abort(500)
     finally:
@@ -93,7 +93,7 @@ def show_artist(artist_id):
         }
         return render_template('pages/show_artist.html', artist=data)
     except Exception as e:
-        print(f'Error fetching artist {artist_id}: {e}')
+        print(f'Error - [GET] - /artists/{artist_id} - {e}')
         err_message = getattr(
             e, 'message', 'Artist could not be fetched at this time')
         err_status = getattr(e, 'code', 500)
@@ -128,11 +128,12 @@ def edit_artist(artist_id):
 
         # prepopulate form with existing values from artist data
         form = ArtistForm(data=artist)
+
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         return render_template('forms/edit_artist.html',
                                form=form, artist=artist)
     except Exception as e:
-        print(f'Error getting artist {artist_id} to edit: {e}')
+        print(f'Error - [GET] /artists/{artist_id}/edit - {e}')
         flash('Error getting artist to edit. Refresh or try again later.')
         return redirect(url_for('show_artist', artist_id=artist_id))
     finally:
@@ -158,6 +159,7 @@ def edit_artist_submission(artist_id):
         return redirect(url_for('show_artist', artist_id=artist_id))
     except Exception as e:
         db.session.rollback()
+        print(f'Error - [POST] /artists/{artist_id}/edit - {e}')
         err_message = getattr(
             e, 'message', 'Could not edit venue at this time. Try again later.')
         err_status = getattr(e, 'code', 500)
@@ -179,7 +181,7 @@ def create_artist_form():
         form.genres.choices = genres
         return render_template('forms/new_artist.html', form=form)
     except Exception as e:
-        print(f'Error setting form for creating an artist: {e}')
+        print(f'Error - [GET] /artists/create - {e}')
         abort(500)
     finally:
         db.session.close()
@@ -211,6 +213,7 @@ def create_artist_submission():
         return render_template('pages/home.html')
     except Exception as e:
         db.session.rollback()
+        print(f'Error - [POST] /artists/create - {e}')
         artist_name = artist_data.get('name')
         print(f'Artist {artist_name}: {e}')
         flash(f'Artist {artist_name} could not be created.')
@@ -237,7 +240,7 @@ def delete_artist(artist_id):
         status = 200
     except Exception as e:
         db.session.rollback()
-        print(f'Error deleting artist: {e}')
+        print(f'Error - [DELETE] /artist/{artist_id} - {e}')
     finally:
         db.session.close()
         return json.dumps(success), status
