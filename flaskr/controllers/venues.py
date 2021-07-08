@@ -12,8 +12,6 @@ from flaskr.forms import VenueForm
 
 @app.route('/venues', methods=['GET'])
 def venues():
-    view = ''
-
     try:
         all_venues = Venue.query.all()
         places = {}
@@ -37,14 +35,13 @@ def venues():
                     'venues': [new_venue_data]
                 }
         data = places.values()
-        view = render_template('pages/venues.html', areas=data)
+        return render_template('pages/venues.html', areas=data)
     except Exception as e:
         print(f'Error fetching venues: {e}')
         flash('Venues could not be fetched at this time.')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 #  Search
 #  ----------------------------------------------------------------
@@ -52,7 +49,6 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    view = ''
     try:
         search_term = request.form.get('search_term', '')
         data = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
@@ -60,15 +56,14 @@ def search_venues():
             "count": data.count(),
             "data": data.all()
         }
-        view = render_template('pages/search_venues.html',
+        return render_template('pages/search_venues.html',
                                results=response, search_term=search_term)
     except Exception as e:
         print(f'Error searching venues for {search_term}: {e}')
         flash('Venues could not be searched at this time. Refresh or try again later.')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 def select_venue_show_details(show):
@@ -117,17 +112,16 @@ def show_venue(venue_id):
             'upcoming_shows_count': len(upcoming_shows),
         }
 
-        db.session.close()
-
         return render_template('pages/show_venue.html', venue=data)
     except Exception as e:
-        db.session.close()
         print(f'Error fetching venue {venue_id}: {e}')
         err_message = getattr(
             e, 'message', 'Venue could not be fetched at this time')
         err_status = getattr(e, 'code', 500)
         flash(err_message)
         abort(err_status)
+    finally:
+        db.session.close()
 
 
 #  Create Venue
@@ -141,20 +135,19 @@ def create_venue_form():
         all_genres = Genre.query.all()
         form = VenueForm()
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
-        view = render_template('forms/new_venue.html', form=form)
+        return render_template('forms/new_venue.html', form=form)
     except Exception as e:
         print(f'Error creating venue form: {e}')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    page = None
     try:
         venue_data = request.form
+
         venue = Venue(
             name=venue_data.get('name'),
             city=venue_data.get('city'),
@@ -175,16 +168,17 @@ def create_venue_submission():
 
         db.session.add(venue)
         db.session.commit()
+
         flash(f'Venue {venue.name} was successfully listed!')
-        page = render_template('pages/home.html')
+        return render_template('pages/home.html')
     except Exception as e:
-        print(f'Error creating venue: {e}')
-        venue_name = venue_data.get('name')
-        flash(f'Venue {venue_name} could not be created.')
         db.session.rollback()
+        venue_name = venue_data.get('name')
+        print(f'Error creating venue {venue_name}: {e}')
+        flash(f'Venue {venue_name} could not be created.')
+        abort(500)
     finally:
         db.session.close()
-        return page
 
 
 #  Update Venue
@@ -196,6 +190,9 @@ def edit_venue(venue_id):
     try:
         all_genres = Genre.query.all()
         data = Venue.query.get(venue_id)
+        if not data:
+            abort(404, 'Venue does not exist')
+
         venue = {
             'id': data.id,
             'name': data.name,
@@ -214,20 +211,26 @@ def edit_venue(venue_id):
         # prepopulate form with existing values from artist data
         form = VenueForm(data=venue)
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
-        view = render_template('forms/edit_venue.html', form=form, venue=venue)
+        return render_template('forms/edit_venue.html', form=form, venue=venue)
     except Exception as e:
-        print(f'Error editing venue: {e}')
-        flash('Could not edit venue. Please try again later.')
         db.session.rollback()
+        print(f'Error editing venue: {e}')
+        err_message = getattr(
+            e, 'message', 'Venue could not be fetched at this time')
+        err_status = getattr(e, 'code', 500)
+        flash(err_message)
+        abort(err_status)
     finally:
         db.session.close()
-        return view
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
     try:
         venue = Venue.query.get(venue_id)
+        if not venue:
+            abort(404, 'Venue does not exist')
+
         venue.name = request.form.get('name')
         venue.facebook_link = request.form.get('facebook_link')
         venue.image_link = request.form.get('image_link')
@@ -240,13 +243,17 @@ def edit_venue_submission(venue_id):
         venue.seeking_description = request.form.get('seeking_description')
         venue.website = request.form.get('website')
         db.session.commit()
+        return redirect(url_for('show_venue', venue_id=venue_id))
     except Exception as e:
-        print(f'Error editing venue: {e}')
-        flash('Could not edit venue. Please try again later.')
         db.session.rollback()
+        print(f'Error editing venue: {e}')
+        err_message = getattr(
+            e, 'message', 'Could not edit venue at this time. Try again later.')
+        err_status = getattr(e, 'code', 500)
+        flash(err_message)
+        abort(err_status)
     finally:
         db.session.close()
-        return redirect(url_for('show_venue', venue_id=venue_id))
 
 
 #  Delete Venue
@@ -259,6 +266,8 @@ def delete_venue(venue_id):
     status = 500
     try:
         venue = Venue.query.get(venue_id)
+        if not venue:
+            abort(404, 'Venue does not exist')
         db.session.delete(venue)
         db.session.commit()
         success = True

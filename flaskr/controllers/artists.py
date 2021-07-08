@@ -1,6 +1,6 @@
 import pytz
 from datetime import datetime
-from flask import flash, json, redirect, render_template, request, url_for
+from flask import abort, flash, json, redirect, render_template, request, url_for
 from flaskr.app import app
 from flaskr.db import db
 from flaskr.models import Artist, Genre
@@ -12,17 +12,15 @@ from flaskr.forms import ArtistForm
 
 @app.route('/artists', methods={'GET'})
 def artists():
-    view = ''
     try:
-        data = Artist.query.all()
-        view = render_template('pages/artists.html', artists=data)
+        artists = Artist.query.all()
+        return render_template('pages/artists.html', artists=artists)
     except Exception as e:
         print(f'Error fetching artists: {e}')
         flash('Artists could not be fetched right now. Refresh or try again later.')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 #  Search
@@ -31,7 +29,6 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-    view = ''
     try:
         search_term = request.form.get('search_term', '')
         data = Artist.query.filter(Artist.name.ilike(f'%{search_term}%'))
@@ -39,15 +36,14 @@ def search_artists():
             "count": data.count(),
             "data": data.all()
         }
-        view = render_template('pages/search_artists.html',
+        return render_template('pages/search_artists.html',
                                results=response, search_term=search_term)
     except Exception as e:
         print(f'Error fetching artists: {e}')
-        flash('Artists could not be searched right now. Try again later.')
-        view = render_template('errors/500.html')
+        flash('Artists could not be searched at this time. Refresh or try again later.')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 def select_artist_show_details(show):
@@ -67,9 +63,11 @@ def select_artist_show_details(show):
 
 @app.route('/artists/<int:artist_id>', methods=['GET'])
 def show_artist(artist_id):
-    view = ''
     try:
         artist = Artist.query.get(artist_id)
+        if not artist:
+            abort(404, 'Artist does not exist')
+
         shows = artist.shows
         now = datetime.now(pytz.utc)
         past_shows = [select_artist_show_details(show)
@@ -93,36 +91,16 @@ def show_artist(artist_id):
             'past_shows_count': len(past_shows),
             'upcoming_shows_count': len(upcoming_shows),
         }
-        view = render_template('pages/show_artist.html', artist=data)
+        return render_template('pages/show_artist.html', artist=data)
     except Exception as e:
-        print(f'Error fetching artist: {e}')
-        flash('Artist could not be fetched right now. Try again later.')
-        view = render_template('errors/500.html')
+        print(f'Error fetching artist {artist_id}: {e}')
+        err_message = getattr(
+            e, 'message', 'Artist could not be fetched at this time')
+        err_status = getattr(e, 'code', 500)
+        flash(err_message)
+        abort(err_status)
     finally:
         db.session.close()
-        return view
-
-
-#  Delete Artist
-#  ----------------------------------------------------------------
-
-
-@app.route('/artists/<artist_id>', methods=['DELETE'])
-def delete_artist(artist_id):
-    success = False
-    status = 500
-    try:
-        artist = Artist.query.get(artist_id)
-        db.session.delete(artist)
-        db.session.commit()
-        success = True
-        status = 200
-    except Exception as e:
-        db.session.rollback()
-        print(f'Error deleting artist: {e}')
-    finally:
-        db.session.close()
-        return json.dumps(success), status
 
 
 #  Update Artist
@@ -131,7 +109,6 @@ def delete_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-    view = ''
     try:
         all_genres = Genre.query.all()
         data = Artist.query.get(artist_id)
@@ -152,15 +129,14 @@ def edit_artist(artist_id):
         # prepopulate form with existing values from artist data
         form = ArtistForm(data=artist)
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
-        view = render_template('forms/edit_artist.html',
+        return render_template('forms/edit_artist.html',
                                form=form, artist=artist)
     except Exception as e:
         print(f'Error getting artist {artist_id} to edit: {e}')
         flash('Error getting artist to edit. Refresh or try again later.')
-        view = redirect(url_for('show_artist', artist_id=artist_id))
+        return redirect(url_for('show_artist', artist_id=artist_id))
     finally:
         db.session.close()
-        return view
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
@@ -179,13 +155,16 @@ def edit_artist_submission(artist_id):
         artist.seeking_description = request.form.get('seeking_description')
         artist.website = request.form.get('website')
         db.session.commit()
+        return redirect(url_for('show_artist', artist_id=artist_id))
     except Exception as e:
-        print(f'Error editing artist {artist_id}: {e}')
-        flash('Could not edit artist. Please try again later.')
         db.session.rollback()
+        err_message = getattr(
+            e, 'message', 'Could not edit venue at this time. Try again later.')
+        err_status = getattr(e, 'code', 500)
+        flash(err_message)
+        abort(err_status)
     finally:
         db.session.close()
-        return redirect(url_for('show_artist', artist_id=artist_id))
 
 
 #  Create Artist
@@ -194,18 +173,16 @@ def edit_artist_submission(artist_id):
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-    view = ''
     try:
         genres = [(genre.id, genre.name) for genre in Genre.query.all()]
         form = ArtistForm()
         form.genres.choices = genres
-        view = render_template('forms/new_artist.html', form=form)
+        return render_template('forms/new_artist.html', form=form)
     except Exception as e:
         print(f'Error setting form for creating an artist: {e}')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 @app.route('/artists/create', methods=['POST'])
@@ -213,6 +190,7 @@ def create_artist_submission():
     # called upon submitting the new artist listing form
     try:
         artist_data = request.form
+
         artist = Artist(
             name=artist_data.get('name'),
             facebook_link=artist_data.get('facebook_link'),
@@ -230,12 +208,36 @@ def create_artist_submission():
         db.session.commit()
         # on successful db insert, flash success
         flash(f'Artist {artist.name} was successfully listed!')
-        view = render_template('pages/home.html')
+        return render_template('pages/home.html')
     except Exception as e:
-        print(f'Error creating an artist: {e}')
-        flash('An error occurred. Artist could not be listed.')
-        view = redirect(url_for('create_artist_form'))
         db.session.rollback()
+        artist_name = artist_data.get('name')
+        print(f'Artist {artist_name}: {e}')
+        flash(f'Artist {artist_name} could not be created.')
+        abort(500)
     finally:
         db.session.close()
-        return view
+
+
+#  Delete Artist
+#  ----------------------------------------------------------------
+
+
+@app.route('/artists/<artist_id>', methods=['DELETE'])
+def delete_artist(artist_id):
+    success = False
+    status = 500
+    try:
+        artist = Artist.query.get(artist_id)
+        if not artist:
+            abort(404, 'Artist does not exist')
+        db.session.delete(artist)
+        db.session.commit()
+        success = True
+        status = 200
+    except Exception as e:
+        db.session.rollback()
+        print(f'Error deleting artist: {e}')
+    finally:
+        db.session.close()
+        return json.dumps(success), status

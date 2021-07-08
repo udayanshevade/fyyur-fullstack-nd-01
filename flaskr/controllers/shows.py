@@ -1,5 +1,5 @@
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, request, url_for
 from flaskr.db import db
 from flaskr.app import app
 from flaskr.models import Show
@@ -26,18 +26,17 @@ def select_show_details(show):
 
 @app.route('/shows', methods=['GET'])
 def shows():
-    view = ''
     try:
         shows = Show.query.all()
         data = [select_show_details(show) for show in shows]
-        view = render_template('pages/shows.html', shows=data)
+        return render_template('pages/shows.html', shows=data)
     except Exception as e:
+        db.session.close()
         print(f'Error fetching shows: {e}')
         flash('Shows could not be fetched at this time. Refresh or try again later.')
-        view = render_template('errors/500.html')
+        abort(500)
     finally:
         db.session.close()
-        return view
 
 
 #  Create Show
@@ -64,12 +63,11 @@ def create_show_submission():
         db.session.commit()
         # on successful db insert, flash success
         flash('Show was successfully listed!')
-        view = render_template('pages/home.html')
+        return render_template('pages/home.html')
     except Exception as e:
+        db.session.rollback()
         print(f'Error creating a show: {e}')
         flash('An error occurred. Show could not be listed.')
-        view = redirect(url_for('create_shows'))
-        db.session.rollback()
+        return redirect(url_for('create_shows'))
     finally:
         db.session.close()
-        return view
