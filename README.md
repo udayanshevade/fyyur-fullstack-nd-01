@@ -89,7 +89,7 @@ Overview:
 5. Handling search for venues, artists, powering the `/search` routes.
 6. Handling individual venue and artist detail pages, powering the `<venue|artist>/<id>` routes.
 
-##### TODO:
+##### Things to add:
 
 - Implement artist availability. An artist can list available times that they can be booked. Restrict venues from being able to create shows with artists during a show time that is outside of their availability.
 - Show Recent Listed Artists and Recently Listed Venues on the homepage, returning results for Artists and Venues sorting by newly created. Limit to the 10 most recently listed items.

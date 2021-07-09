@@ -1,4 +1,6 @@
+from sqlalchemy.sql import func
 from flaskr.db import db
+from datetime import datetime
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -41,6 +43,11 @@ class Venue(db.Model):
     genres = db.relationship(
         'Genre', secondary=venue_genres, backref=db.backref('venue'))
 
+    created_at = db.Column(db.TIMESTAMP(timezone=True),
+                           server_default=func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True),
+                           onupdate=func.now())
+
     def __repr__(self) -> str:
         return f'<Venue id: {self.id}, name: {self.name}>'
 
@@ -66,6 +73,11 @@ class Artist(db.Model):
     genres = db.relationship(
         'Genre', secondary=artist_genres, backref=db.backref('artist'))
 
+    created_at = db.Column(db.TIMESTAMP(timezone=True),
+                           server_default=func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True),
+                           onupdate=func.now())
+
     def __repr__(self) -> str:
         return f'<Artist id: {self.id}, name: {self.name}>'
 
@@ -81,6 +93,11 @@ class Show(db.Model):
 
     end_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     start_time = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+
+    created_at = db.Column(db.TIMESTAMP(timezone=True),
+                           server_default=func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True),
+                           onupdate=func.now())
 
     def __repr__(self) -> str:
         return f'<Show id: {self.id}>'
