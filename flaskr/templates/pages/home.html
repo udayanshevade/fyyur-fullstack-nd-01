@@ -1,8 +1,9 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/home.css" />
 <div class="row">
-	<div class="col-sm-6">
+	<div class="col-sm-6 {{ 'col-sm-offset-3' if recent_artists|count == 0 and recent_venues|count == 0 else '' }} text-center">
 		<h1>Fyyur 🔥</h1>
 		<p class="lead">Where musical artists meet musical venues.</p>
 		<h3>
@@ -18,8 +19,37 @@
 			<a href="/shows/create"><button class="btn btn-default btn-lg">Post a show</button></a>
 		</h3>
 	</div>
-	<div class="col-sm-6 hidden-sm hidden-xs">
-		<img id="front-splash" src="{{ url_for('static',filename='img/front-splash.jpg') }}" alt="Front Photo of Musical Band" />
+	<div class="col-sm-6 recent text-center">
+		<div class="recent__list-container">
+			<h4 class="recent__list-heading">Recent Artists</h4>
+			<ul class="list-group recent__list-group">
+				{% for artist in recent_artists %}
+					<li class="list-group-item recent__list-group-item">
+						<a class="recent__list-link" href="/artists/{{ artist.id }}">
+							{{ artist.name }}
+						</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+		<hr class="recent__list-divider" />
+		<div class="recent__list-container">
+			<h4 class="recent__list-heading">Recent Venues</h4>
+			<ul class="list-group recent__list-group">
+				{% for venue in recent_venues %}
+					<li class="list-group-item recent__list-group-item">
+						<a class="recent__list-link" href="/venues/{{ venue.id }}">
+							{{ venue.name }}
+						</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
 	</div>
 </div>
+<section class="row hidden-sm hidden-xs">
+	<div class="col-sm-12">
+		<img class="img-responsive" id="front-splash" src="{{ url_for('static',filename='img/front-splash.jpg') }}" alt="Front Photo of Musical Band" />
+	</div>
+</section>
 {% endblock %}

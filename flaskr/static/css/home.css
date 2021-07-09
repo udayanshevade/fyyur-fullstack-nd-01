@@ -1,0 +1,35 @@
+h1 {
+  margin-bottom: 1em;
+}
+
+.recent__list-container {
+  max-height: 200px;
+  display: flex;
+  flex-flow: column;
+  padding: 2rem 4rem 0;
+}
+
+.recent__list-container ~ .recent__list-container {
+  margin-top: 2rem;
+}
+
+.recent__list-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: white;
+}
+
+.recent__list-group {
+  overflow: auto;
+}
+
+.recent__list-group-item {
+  border: none;
+}
+
+.recent__list-divider {
+  color: #ddd;
+  margin-left: 25%;
+  margin-right: 25%;
+}

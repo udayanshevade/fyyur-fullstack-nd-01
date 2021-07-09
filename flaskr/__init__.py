@@ -1,17 +1,27 @@
-from flask import render_template
+from flask import flash, render_template
 import logging
 from logging import Formatter, FileHandler
 from flaskr.forms import *
 from flaskr.app import app
+from flaskr.db import db
 import flaskr.filters
 import flaskr.controllers.venues
 import flaskr.controllers.artists
 import flaskr.controllers.shows
+from flaskr.models import Venue, Artist
 
 
 @app.route('/')
 def index():
-    return render_template('pages/home.html')
+    try:
+        recent_venues = Venue.query.order_by('created_at').limit(10).all()
+        recent_artists = Artist.query.order_by('created_at').limit(10).all()
+    except Exception as e:
+        print(f'Error [GET] / - {e}')
+        flash("Couldn't get recent venues or artists. Refresh or try again later.")
+    finally:
+        db.session.close()
+    return render_template('pages/home.html', recent_venues=recent_venues, recent_artists=recent_artists)
 
 
 @app.errorhandler(404)
