@@ -19,9 +19,8 @@ def venues():
 
         # massage data for expected format
         for venue in all_venues:
-            upcoming_shows = Show.query.join(Venue).filter(
-                Show.venue_id == venue.id, Show.start_time >= now).all()
-            num_upcoming_shows = len(upcoming_shows)
+            num_upcoming_shows = len([
+                show for show in venue.shows if show.start_time >= now])
             new_venue_data = {
                 'id': venue.id,
                 'name': venue.name,
@@ -68,8 +67,18 @@ def search_venues():
         db.session.close()
 
 
+def select_show_details_for_venue(show):
+    artist = show.artist
+    return {
+        'artist_id': artist.id,
+        'artist_name': artist.name,
+        'artist_image_link': artist.image_link,
+        'start_time': show.start_time,
+    }
+
 #  Venue
 #  ----------------------------------------------------------------
+
 
 @app.route('/venues/<int:venue_id>', methods=['GET'])
 def show_venue(venue_id):
@@ -79,16 +88,11 @@ def show_venue(venue_id):
             abort(404, 'Venue does not exist')
 
         now = datetime.now(pytz.utc)
-        shows = db.session.query(
-            Show.id.label('show_id'),
-            Artist.id.label('artist_id'),
-            Artist.name.label('artist_name'),
-            Artist.image_link.label('artist_image_link'),
-            Show.start_time,
-            Show.end_time,
-        ).select_from(Show).join(Artist).filter(Show.venue_id == venue_id)
-        past_shows = shows.filter(Show.end_time <= now).all()
-        upcoming_shows = shows.filter(Show.start_time >= now).all()
+
+        past_shows = [select_show_details_for_venue(
+            show) for show in venue.shows if show.end_time <= now]
+        upcoming_shows = [select_show_details_for_venue(
+            show) for show in venue.shows if show.start_time >= now]
         data = {
             'id': venue.id,
             'name': venue.name,

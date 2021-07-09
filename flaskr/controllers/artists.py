@@ -49,6 +49,15 @@ def search_artists():
 #  Artist
 #  ----------------------------------------------------------------
 
+def select_show_details_for_artist(show):
+    venue = show.venue
+    return {
+        'venue_id': venue.id,
+        'venue_name': venue.name,
+        'venue_image_link': venue.image_link,
+        'start_time': show.start_time,
+    }
+
 
 @app.route('/artists/<int:artist_id>', methods=['GET'])
 def show_artist(artist_id):
@@ -59,15 +68,10 @@ def show_artist(artist_id):
 
         now = datetime.now(pytz.utc)
 
-        shows = db.session.query(
-            Show.id.label('show_id'),
-            Show.start_time,
-            Venue.id.label('venue_id'),
-            Venue.name.label('venue_name'),
-            Venue.image_link.label('venue_image_link'),
-        ).select_from(Show).join(Artist).filter(Show.artist_id == artist_id)
-        past_shows = shows.filter(Show.end_time <= now).all()
-        upcoming_shows = shows.filter(Show.start_time >= now).all()
+        past_shows = [select_show_details_for_artist(
+            show) for show in artist.shows if show.end_time <= now]
+        upcoming_shows = [select_show_details_for_artist(
+            show) for show in artist.shows if show.start_time >= now]
 
         data = {
             'id': artist.id,
