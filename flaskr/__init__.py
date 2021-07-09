@@ -14,8 +14,10 @@ from flaskr.models import Venue, Artist
 @app.route('/')
 def index():
     try:
-        recent_venues = Venue.query.order_by('created_at').limit(10).all()
-        recent_artists = Artist.query.order_by('created_at').limit(10).all()
+        recent_venues = Venue.query.order_by(
+            Venue.created_at.desc()).limit(10).all()
+        recent_artists = Artist.query.order_by(
+            Artist.created_at.desc()).limit(10).all()
     except Exception as e:
         print(f'Error [GET] / - {e}')
         flash("Couldn't get recent venues or artists. Refresh or try again later.")
