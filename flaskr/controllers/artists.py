@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import abort, flash, json, redirect, render_template, request, url_for
 from flaskr.app import app
 from flaskr.db import db
-from flaskr.models import Artist, Genre
+from flaskr.models import Artist, Genre, Show, Venue
 from flaskr.forms import ArtistForm
 
 #  Artists
@@ -46,17 +46,6 @@ def search_artists():
         db.session.close()
 
 
-def select_artist_show_details(show):
-    '''Helper to select pertinent fields from Show object'''
-    venue = show.venue
-    return {
-        'venue_id': venue.id,
-        'venue_name': venue.name,
-        'venue_image_link': venue.image_link,
-        'start_time': show.start_time,
-    }
-
-
 #  Artist
 #  ----------------------------------------------------------------
 
@@ -68,15 +57,17 @@ def show_artist(artist_id):
         if not artist:
             abort(404, 'Artist does not exist')
 
-        # note: would implement pagination/lazy loading here to optimize
-        shows = artist.shows
-
         now = datetime.now(pytz.utc)
 
-        past_shows = [select_artist_show_details(show)
-                      for show in shows if show.end_time <= now]
-        upcoming_shows = [select_artist_show_details(
-            show) for show in shows if show.start_time >= now]
+        shows = db.session.query(
+            Show.id.label('show_id'),
+            Show.start_time,
+            Venue.id.label('venue_id'),
+            Venue.name.label('venue_name'),
+            Venue.image_link.label('venue_image_link'),
+        ).select_from(Show).join(Artist).filter(Show.artist_id == artist_id)
+        past_shows = shows.filter(Show.end_time <= now).all()
+        upcoming_shows = shows.filter(Show.start_time >= now).all()
 
         data = {
             'id': artist.id,

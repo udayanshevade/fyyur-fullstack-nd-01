@@ -2,34 +2,28 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flaskr.db import db
 from flaskr.app import app
-from flaskr.models import Show
+from flaskr.models import Show, Artist, Venue
 from flaskr.forms import ShowForm
 
 #  Shows
 #  ----------------------------------------------------------------
 
 
-def select_show_details(show):
-    '''Helper to select show details'''
-    venue = show.venue
-    artist = show.artist
-    return {
-        'venue_id': venue.id,
-        'venue_name': venue.name,
-        'artist_id': artist.id,
-        'artist_name': artist.name,
-        'artist_image_link': artist.image_link,
-        'start_time': show.start_time,
-        'end_time': show.end_time,
-    }
-
-
 @app.route('/shows', methods=['GET'])
 def shows():
     try:
-        shows = Show.query.all()
-        data = [select_show_details(show) for show in shows]
-        return render_template('pages/shows.html', shows=data)
+        shows = db.session.query(
+            Show.id,
+            Show.start_time,
+            Show.end_time,
+            Artist.id.label('artist_id'),
+            Artist.name.label('artist_name'),
+            Artist.image_link.label('artist_image_link'),
+            Venue.id.label('venue_id'),
+            Venue.name.label('venue_name')
+        ).select_from(Show).join(Artist, Venue).all()
+
+        return render_template('pages/shows.html', shows=shows)
     except Exception as e:
         db.session.close()
         print(f'Error - [GET] /shows - {e}')

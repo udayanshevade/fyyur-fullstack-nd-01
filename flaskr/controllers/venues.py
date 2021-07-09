@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import abort, flash, json, redirect, render_template, request, url_for
 from flaskr.db import db
 from flaskr.app import app
-from flaskr.models import Venue, Genre
+from flaskr.models import Venue, Genre, Show, Artist
 from flaskr.forms import VenueForm
 
 #  Venues
@@ -19,8 +19,8 @@ def venues():
 
         # massage data for expected format
         for venue in all_venues:
-            upcoming_shows = [
-                show for show in venue.shows if show.start_time >= now]
+            upcoming_shows = Show.query.join(Venue).filter(
+                Show.venue_id == venue.id, Show.start_time >= now).all()
             num_upcoming_shows = len(upcoming_shows)
             new_venue_data = {
                 'id': venue.id,
@@ -68,17 +68,6 @@ def search_venues():
         db.session.close()
 
 
-def select_venue_show_details(show):
-    '''Helper to select pertinent fields from Show object'''
-    artist = show.artist
-    return {
-        'artist_id': artist.id,
-        'artist_name': artist.name,
-        'artist_image_link': artist.image_link,
-        'start_time': show.start_time,
-    }
-
-
 #  Venue
 #  ----------------------------------------------------------------
 
@@ -89,12 +78,17 @@ def show_venue(venue_id):
         if not venue:
             abort(404, 'Venue does not exist')
 
-        shows = venue.shows
         now = datetime.now(pytz.utc)
-        past_shows = [select_venue_show_details(show)
-                      for show in shows if show.end_time <= now]
-        upcoming_shows = [select_venue_show_details(
-            show) for show in shows if show.start_time >= now]
+        shows = db.session.query(
+            Show.id.label('show_id'),
+            Artist.id.label('artist_id'),
+            Artist.name.label('artist_name'),
+            Artist.image_link.label('artist_image_link'),
+            Show.start_time,
+            Show.end_time,
+        ).select_from(Show).join(Artist).filter(Show.venue_id == venue_id)
+        past_shows = shows.filter(Show.end_time <= now).all()
+        upcoming_shows = shows.filter(Show.start_time >= now).all()
         data = {
             'id': venue.id,
             'name': venue.name,
