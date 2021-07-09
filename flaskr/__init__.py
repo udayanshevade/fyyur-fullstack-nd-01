@@ -14,12 +14,15 @@ from flaskr.models import Venue, Artist
 @app.route('/')
 def index():
     try:
+        # show latest venues/artists, most recent first
         recent_venues = Venue.query.order_by(
             Venue.created_at.desc()).limit(10).all()
         recent_artists = Artist.query.order_by(
             Artist.created_at.desc()).limit(10).all()
     except Exception as e:
         print(f'Error [GET] / - {e}')
+        # still render the page even if the items can't be fetched
+        # but flash an error letting the user know
         flash("Couldn't get recent venues or artists. Refresh or try again later.")
     finally:
         db.session.close()

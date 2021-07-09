@@ -68,12 +68,16 @@ def show_artist(artist_id):
         if not artist:
             abort(404, 'Artist does not exist')
 
+        # note: would implement pagination/lazy loading here to optimize
         shows = artist.shows
+
         now = datetime.now(pytz.utc)
+
         past_shows = [select_artist_show_details(show)
                       for show in shows if show.end_time <= now]
         upcoming_shows = [select_artist_show_details(
             show) for show in shows if show.start_time >= now]
+
         data = {
             'id': artist.id,
             'name': artist.name,
@@ -128,7 +132,7 @@ def edit_artist(artist_id):
 
         # prepopulate form with existing values from artist data
         form = ArtistForm(data=artist)
-
+        # dynamically populate genre choices
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
         return render_template('forms/edit_artist.html',
                                form=form, artist=artist)
@@ -149,6 +153,7 @@ def edit_artist_submission(artist_id):
             abort(404, 'Artist does not exist')
 
         form_data = request.form
+
         artist.name = form_data.get('name')
         artist.facebook_link = form_data.get('facebook_link')
         artist.image_link = form_data.get('image_link')
@@ -161,10 +166,10 @@ def edit_artist_submission(artist_id):
         artist.seeking_description = form_data.get('seeking_description')
         artist.website = form_data.get('website')
 
+        # validate the form inputs
         form = ArtistForm(data=form_data)
         all_genres = Genre.query.all()
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
-
         if form.validate_on_submit():
             db.session.commit()
             return redirect(url_for('show_artist', artist_id=artist_id))
@@ -223,13 +228,13 @@ def create_artist_submission():
         artist.genres = [Genre.query.get(id)
                          for id in request.form.getlist('genres')]
 
+        # validate the form inputs
         form = ArtistForm(data=artist_data)
         form.genres.choices = [(genre.id, genre.name)
                                for genre in Genre.query.all()]
         if form.validate_on_submit():
             db.session.add(artist)
             db.session.commit()
-            # on successful db insert, flash success
             flash(f'Artist {artist.name} was successfully listed!')
             return render_template('pages/home.html')
         else:

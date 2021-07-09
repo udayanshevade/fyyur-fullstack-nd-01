@@ -61,7 +61,6 @@ def create_show_submission():
         )
         db.session.add(show)
         db.session.commit()
-        # on successful db insert, flash success
         flash('Show was successfully listed!')
         return render_template('pages/home.html')
     except Exception as e:

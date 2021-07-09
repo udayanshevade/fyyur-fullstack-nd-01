@@ -19,6 +19,7 @@
 			<a href="/shows/create"><button class="btn btn-default btn-lg">Post a show</button></a>
 		</h3>
 	</div>
+	{% if recent_artists|count != 0 or recent_venues|count != 0 %}
 	<div class="col-sm-6 recent text-center">
 		<div class="recent__list-container">
 			<h4 class="recent__list-heading">Recent Artists</h4>
@@ -46,6 +47,7 @@
 			</ul>
 		</div>
 	</div>
+	{% endif %}
 </div>
 <section class="row hidden-sm hidden-xs">
 	<div class="col-sm-12">

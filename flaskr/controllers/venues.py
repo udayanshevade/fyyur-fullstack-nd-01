@@ -16,6 +16,8 @@ def venues():
         all_venues = Venue.query.all()
         places = {}
         now = datetime.now(pytz.utc)
+
+        # massage data for expected format
         for venue in all_venues:
             upcoming_shows = [
                 show for show in venue.shows if show.start_time >= now]
@@ -166,6 +168,7 @@ def create_venue_submission():
         genres = [Genre.query.get(id) for id in venue_genre_data]
         venue.genres = genres
 
+        # validate form inputs
         form = VenueForm(data=venue_data)
         form.genres.choices = [(genre.id, genre.name)
                                for genre in Genre.query.all()]
@@ -253,10 +256,10 @@ def edit_venue_submission(venue_id):
         venue.seeking_description = form_data.get('seeking_description')
         venue.website = form_data.get('website')
 
+        # validate form inputs
         form = VenueForm(data=form_data)
         all_genres = Genre.query.all()
         form.genres.choices = [(genre.id, genre.name) for genre in all_genres]
-
         if form.validate_on_submit():
             db.session.commit()
             return redirect(url_for('show_venue', venue_id=venue_id))
