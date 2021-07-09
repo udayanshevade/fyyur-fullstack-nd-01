@@ -107,7 +107,7 @@ cd fyyur-fullstack-nd-01
 2. **Initialize and activate a virtualenv using:**
 
 ```
-python -m virtualenv env
+python3 -m virtualenv env
 source env/bin/activate
 ```
 
@@ -123,6 +123,14 @@ source env/Scripts/activate
 pip install -r requirements.txt
 ```
 
+4. **Set the flask app:**
+
+Since the flask app files have been refactored a bit, this variable needs to be exported first.
+
+```
+export FLASK_APP=flaskr
+```
+
 4. **Get the latest DB schemas:**
 
 ```
@@ -132,13 +140,12 @@ flask db migrate
 5. **Populate the DB with seed data (optional):**
 
 ```
-python setup.py
+python3 setup.py
 ```
 
 6. **Run the development server:**
 
 ```
-export FLASK_APP=flaskr
 export FLASK_ENV=development # enables debug mode
 flask run
 ```
