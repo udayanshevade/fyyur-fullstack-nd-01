@@ -13,6 +13,8 @@ from flaskr.models import Venue, Artist
 
 @app.route('/')
 def index():
+    recent_venues = []
+    recent_artists = []
     try:
         # show latest venues/artists, most recent first
         recent_venues = Venue.query.order_by(
